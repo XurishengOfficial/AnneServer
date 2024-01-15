@@ -16,8 +16,8 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	g_hDirectorSINum = CreateConVar("l4d2_director_specials_num", "28", "特感数量", _, true, 8.0, true, 28.0);
-	g_hDirectorSIRespawnInterval = CreateConVar("l4d2_director_specials_respawn_interval", "15", "刷新间隔", _, true, 0.0);
+	g_hDirectorSINum = CreateConVar("l4d2_director_specials_num", "28", "特感数量", FCVAR_NOTIFY);
+	g_hDirectorSIRespawnInterval = CreateConVar("l4d2_director_specials_respawn_interval", "15", "刷新间隔", FCVAR_NOTIFY);
 
 	HookConVarChange(g_hDirectorSINum, reload_script);
 	HookConVarChange(g_hDirectorSIRespawnInterval, reload_script);
@@ -35,11 +35,11 @@ public reload_script(Handle convar, char[] oldValue, char[] newValue)
 	CPrintToChatAll("{olive}❀ {default}当前特感最高同屏{blue}%d{default}特, 刷新间隔{blue}%d{default}s", g_hDirectorSINum.IntValue, g_hDirectorSIRespawnInterval.IntValue);
 }
 
-public void OnClientPutInServer(int client)
-{
-	if (IsFakeClient(client)) return;
-		CPrintToChatAll("{olive}❀ {default}当前特感最高同屏{blue}%d{default}特, 刷新间隔{blue}%d{default}s", g_hDirectorSINum.IntValue, g_hDirectorSIRespawnInterval.IntValue);
-}
+// public void OnClientPutInServer(int client)
+// {
+// 	if (IsFakeClient(client)) return;
+// 		CPrintToChatAll("{olive}❀ {default}当前特感最高同屏{blue}%d{default}特, 刷新间隔{blue}%d{default}s", g_hDirectorSINum.IntValue, g_hDirectorSIRespawnInterval.IntValue);
+// }
 
 public void CheatCommand(char[] strCommand, char[] strParam1)
 {
