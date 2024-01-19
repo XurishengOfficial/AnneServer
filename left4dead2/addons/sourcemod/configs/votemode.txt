@@ -1,0 +1,261 @@
+"VoteMode"
+{
+	"游戏模式"
+	{
+		"绝境"
+		{
+			"cmd" "exec vote/Gamemode/mutation4.cfg"
+		}
+		"速递"
+		{
+			"cmd" "exec vote/Gamemode/community1.cfg"
+		}
+		"死门"
+		{
+			"cmd" "exec vote/Gamemode/community5.cfg"
+		}	
+	}
+	"特感数量-[死门][速递]"
+	{
+		"0特模式"
+		{
+			"cmd" "exec vote/SI_num/0.cfg"
+		}
+		"8特模式"
+		{
+			"cmd" "exec vote/SI_num/8.cfg"
+		}
+		"10特模式"
+		{
+			"cmd"  "exec vote/SI_num/10.cfg"
+		}
+		"12特模式"
+		{
+			"cmd" "exec vote/SI_num/12.cfg"
+		}
+		"14特模式"
+		{
+			"cmd" "exec vote/SI_num/14.cfg"
+		}
+		"16特模式"
+		{
+			"cmd" "exec vote/SI_num/16.cfg"
+		}
+		"18特模式"
+		{
+			"cmd" "exec vote/SI_num/18.cfg"
+		}
+		"20特模式"
+		{
+			"cmd" "exec vote/SI_num/20.cfg"
+		}
+		"22特模式"
+		{
+			"cmd" "exec vote/SI_num/22.cfg"
+		}
+		"24特模式"
+		{
+			"cmd" "exec vote/SI_num/24.cfg"
+		}
+		"26特模式"
+		{
+			"cmd" "exec vote/SI_num/26.cfg"
+		}
+		"28特模式"
+		{
+			"cmd" "exec vote/SI_num/28.cfg"
+		}
+	}
+	"特感复活时间-[死门][速递]"
+	{
+		"0s"
+		{
+			"cmd" "exec vote/SI_spawn_time/0.cfg"
+		}
+		"1s"
+		{
+			"cmd" "exec vote/SI_spawn_time/1.cfg"
+		}
+		"2s"
+		{
+			"cmd" "exec vote/SI_spawn_time/2.cfg"
+		}
+		"3s"
+		{
+			"cmd" "exec vote/SI_spawn_time/3.cfg"
+		}
+		"4s"
+		{
+			"cmd" "exec vote/SI_spawn_time/4.cfg"
+		}
+		"5s"
+		{
+			"cmd" "exec vote/SI_spawn_time/5.cfg"
+		}
+		"6s"
+		{
+			"cmd" "exec vote/SI_spawn_time/6.cfg"
+		}
+		"7s"
+		{
+			"cmd" "exec vote/SI_spawn_time/7.cfg"
+		}
+		"8s"
+		{
+			"cmd" "exec vote/SI_spawn_time/8.cfg"
+		}
+		"9s"
+		{
+			"cmd" "exec vote/SI_spawn_time/9.cfg"
+		}
+		"10s"
+		{
+			"cmd" "exec vote/SI_spawn_time/10.cfg"
+		}
+		"11s"
+		{
+			"cmd" "exec vote/SI_spawn_time/11.cfg"
+		}
+		"12s"
+		{
+			"cmd" "exec vote/SI_spawn_time/12.cfg"
+		}
+		"13s"
+		{
+			"cmd" "exec vote/SI_spawn_time/13.cfg"
+		}
+		"14s"
+		{
+			"cmd" "exec vote/SI_spawn_time/14.cfg"
+		}
+		"15s"
+		{
+			"cmd" "exec vote/SI_spawn_time/15.cfg"
+		}
+	}
+	"特感数量-[绝境]"
+	{
+		"8特模式"
+		{
+			"cmd" "exec vote/SI_director_num/8.cfg"
+		}
+		"12特模式"
+		{
+			"cmd" "exec vote/SI_director_num/12.cfg"
+		}
+		"16特模式"
+		{
+			"cmd" "exec vote/SI_director_num/16.cfg"
+		}
+		"20特模式"
+		{
+			"cmd" "exec vote/SI_director_num/20.cfg"
+		}
+		"24特模式"
+		{
+			"cmd" "exec vote/SI_director_num/24.cfg"
+		}
+		"28特模式"
+		{
+			"cmd" "exec vote/SI_director_num/28.cfg"
+		}
+	}
+	"特感复活时间-[绝境]"
+	{
+		"0s"
+		{
+			"cmd" "exec vote/SI_director_spawn_time/0.cfg"
+		}
+		"15s"
+		{
+			"cmd" "exec vote/SI_director_spawn_time/15.cfg"
+		}
+		"30s"
+		{
+			"cmd" "exec vote/SI_director_spawn_time/30.cfg"
+		}
+		"45s"
+		{
+			"cmd" "exec vote/SI_director_spawn_time/45.cfg"
+		}
+	}
+	"回血模式"
+	{
+		"关闭回血"
+		{
+			"cmd" "exec vote/Health_return/type/0.cfg"
+		}
+		"仅开启击杀回血"
+		{
+			"cmd" "exec vote/Health_return/type/1.cfg"
+		}
+		"仅开启吸血"
+		{
+			"cmd" "exec vote/Health_return/type/2.cfg"
+		}	
+	}
+	"回血数值或吸血比例"
+	{
+		"1"
+		{
+			"cmd" "exec vote/Health_return/value/1.cfg"
+		}
+		"2"
+		{
+			"cmd" "exec vote/Health_return/value/2.cfg"
+		}
+		"3"
+		{
+			"cmd" "exec vote/Health_return/value/3.cfg"
+		}	
+		"4"
+		{
+			"cmd" "exec vote/Health_return/value/4.cfg"
+		}	
+		"5"
+		{
+			"cmd" "exec vote/Health_return/value/5.cfg"
+		}	
+	}
+	"训练模式-[死门][速递]"
+	{
+		"关闭训练模式"
+		{
+			"cmd" "exec vote/Training_mode/0.cfg"
+		}
+		"综合防控-[16特5s]"
+		{
+			"cmd" "exec vote/Training_mode/1.cfg"
+		}
+		"空爆特训-[10特0s]"
+		{
+			"cmd" "exec vote/Training_mode/2.cfg"
+		}
+	}
+	"自动解控"
+	{
+		"关闭自动解控"
+		{
+			"cmd" "exec vote/Auto_revive_onoff/0.cfg"
+		}
+		"开启自动解控-处死单个特感"
+		{
+			"cmd" "exec vote/Auto_revive_onoff/1.cfg"
+		}
+		"开启自动解控-处死所有特感"
+		{
+			"cmd" "exec vote/Auto_revive_onoff/2.cfg"
+		}
+	}
+	"礼物盒掉落"
+	{
+		"开启击杀特感掉落礼物"
+		{
+			"cmd" "exec vote/Gift_reward/1.cfg"
+		}
+		"关闭击杀特感掉落礼物"
+		{
+			"cmd" "exec vote/Gift_reward/0.cfg"
+		}
+	}
+}

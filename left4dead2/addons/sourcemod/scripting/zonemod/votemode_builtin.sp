@@ -196,6 +196,8 @@ public int VoteModeMenuHandler(Menu menu, MenuAction action, int param1, int par
 
 		// 记录主菜单选项
 		g_i1stMenuItemPick = param2;
+		if (g_i1stMenuItemPick == 0)
+			g_i1stMenuItemPick = -1;
 		g_hModesKV.Rewind();
 
 		if (g_hModesKV.JumpToKey(g_s1stMenuItemPick) && g_hModesKV.GotoFirstSubKey() && ++g_i2ndMenuItemNum) {
