@@ -136,7 +136,10 @@ public Action KillInfected(Handle timer, int index)
 	}
 	else
 	{
-		ForcePlayerSuicide(index);
+		if(IsClientInGame(index) && GetClientTeam(index) == TEAM_INFECTED)
+		{
+			ForcePlayerSuicide(index);
+		}
 	}
 	return Plugin_Continue;
 }
@@ -156,7 +159,10 @@ public Action KillInfected(Handle timer, int index)
 
 public Action KillOneInfected(Handle timer, int index)
 {
-	ForcePlayerSuicide(index);
+	if(IsClientInGame(index) && GetClientTeam(index) == TEAM_INFECTED)
+	{
+		ForcePlayerSuicide(index);
+	}
 }
 
 public void Event_JockeyRide(Event event, const char[] name, bool dontBroadcast)
