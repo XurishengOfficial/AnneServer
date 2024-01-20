@@ -18,10 +18,7 @@ Handle
 KeyValues
 	g_hModesKV = null;
 
-// ConVar
-// 	g_hCvarPlayerLimit = null,
-// 	g_hMaxPlayers = null,
-// 	g_hSvMaxPlayers = null;
+ConVar g_hGameMode;
 
 char
 	g_s1stMenuItemPick[64],
@@ -34,6 +31,8 @@ int g_i1stMenuItemPick = -1;
 int g_i2ndMenuItemPick = -1;
 
 int g_aMenuItemPick[FIRSTMENUITEM_NUM_MAX];
+
+int g_iLoadInitialConfig = 0;
 
 public Plugin myinfo =
 {
@@ -65,14 +64,41 @@ public void OnPluginStart()
 		SetFailState("Couldn't load configs/votemode.txt!");
 	}
 
+	g_hGameMode = FindConVar("mp_gamemode");
+	g_hGameMode.AddChangeHook(OnGameModeChanged);
 	RegConsoleCmd("sm_votemode", VoteRequest);
 	// RegConsoleCmd("sm_mtest", ShowArray);
 
 	HookEvent("player_disconnect", Event_PlayerDisconnect, EventHookMode_Pre);
 }
 
+void LoadGameModeConfig()
+{
+	char sGameMode[64];
+	g_hGameMode.GetString(sGameMode, sizeof(sGameMode));
+	ServerCommand("exec vote/Gamemode/%s.cfg", sGameMode);
+}
+
+void OnGameModeChanged(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+	LoadGameModeConfig();
+	for (int i = 1; i < FIRSTMENUITEM_NUM_MAX; ++i)
+	{
+		g_aMenuItemPick[i] = 0;
+	}
+	ServerCommand("sm_restartmap");
+}
+
 public void OnConfigsExecuted()
 {
+	if (!g_iLoadInitialConfig)
+	{
+		g_iLoadInitialConfig = 1;
+		LoadGameModeConfig();
+		// 用于Server首次启动时执行对应mode cfg 首个玩家加入后会自动换图
+		ServerCommand("sm_restartmap");
+		return;
+	}
 	for (int i = 1; i < FIRSTMENUITEM_NUM_MAX; ++i)
 	{
 		if (g_aMenuItemPick[i] > 0)
@@ -337,7 +363,7 @@ public void Event_PlayerDisconnect(Event hEvent, const char[] name, bool dontBro
 	if( !client || (IsClientConnected(client) && !IsClientInGame(client))) return;
 	if( client && !IsFakeClient(client) && !checkrealplayerinSV(client))
 	{
-		ServerCommand("exec vote/default.cfg"); 
+		LoadGameModeConfig();
 		for (int i = 1; i < FIRSTMENUITEM_NUM_MAX; ++i)
 		{
 			g_aMenuItemPick[i] = 0;
