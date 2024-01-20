@@ -16,8 +16,8 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	g_hDirectorSINum = CreateConVar("l4d2_director_specials_num", "28", "特感数量", FCVAR_NOTIFY);
-	g_hDirectorSIRespawnInterval = CreateConVar("l4d2_director_specials_respawn_interval", "15", "刷新间隔", FCVAR_NOTIFY);
+	g_hDirectorSINum = CreateConVar("l4d_infectedbots_max_specials", "28", "特感数量", FCVAR_NOTIFY);
+	g_hDirectorSIRespawnInterval = CreateConVar("l4d_infectedbots_spawn_time_max", "15", "刷新间隔", FCVAR_NOTIFY);
 
 	HookConVarChange(g_hDirectorSINum, reload_script);
 	HookConVarChange(g_hDirectorSIRespawnInterval, reload_script);

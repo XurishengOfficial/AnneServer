@@ -54,8 +54,8 @@ DirectorOptions <-
 
 function update_settings()
 {
-    local cvarSINum = (Convars.GetFloat("l4d2_director_specials_num")).tointeger()
-    local cvarSIRespawnInterval = (Convars.GetFloat("l4d2_director_specials_respawn_interval")).tointeger()
+    local cvarSINum = (Convars.GetFloat("l4d_infectedbots_max_specials")).tointeger()
+    local cvarSIRespawnInterval = (Convars.GetFloat("l4d_infectedbots_spawn_time_max")).tointeger()
 
     local otherSINum = cvarSINum / 4
     otherSINum = otherSINum > 6 ? 6 : otherSINum
