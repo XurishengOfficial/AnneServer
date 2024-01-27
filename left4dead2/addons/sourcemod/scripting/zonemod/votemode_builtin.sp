@@ -20,6 +20,15 @@ KeyValues
 
 ConVar g_hGameMode;
 
+ConVar g_hHostName = null;
+ConVar g_hTrainingMode = null;
+ConVar g_hSpecialsNum = null;
+ConVar g_hSpecialsSpawnTime = null;
+// ConVar h_AggresiveSpecialsEnable = null;
+// ConVar h_SpecialsShouldAssaultEnable = null;
+
+char g_HostNameOrigin[128];
+
 char
 	g_s1stMenuItemPick[64],
 	g_sExecCmd[64];
@@ -70,6 +79,8 @@ public void OnPluginStart()
 	// RegConsoleCmd("sm_mtest", ShowArray);
 
 	HookEvent("player_disconnect", Event_PlayerDisconnect, EventHookMode_Pre);
+	g_hHostName = FindConVar("hostname");
+	GetConVarString(g_hHostName, g_HostNameOrigin, sizeof(g_HostNameOrigin));
 }
 
 void LoadGameModeConfig()
@@ -153,6 +164,64 @@ public void OnConfigsExecuted()
 		}
 		g_hModesKV.GotoNextKey(false);
 	}
+	CreateTimer(3.0, Timer_SetHostName, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public Action Timer_SetHostName(Handle timer)
+{
+	// l4d_infectedbots_max_specials
+	// l4d_infectedbots_spawn_time_max
+	// 	ConVar g_hSpecialsNum = null;
+	// ConVar g_hSpecialsSpawnTime = null;
+	// , GetConVarInt(h_MaxPlayerZombies), GetConVarInt(h_InfectedSpawnTimeMax)
+	char hostName[128];
+	char sGameMode[64];
+	g_hGameMode.GetString(sGameMode, sizeof(sGameMode));
+	if (StrEqual(sGameMode, "coop"))
+	{
+		Format(hostName, sizeof(hostName), "%s [战役]", g_HostNameOrigin);
+		return Plugin_Continue;
+	}
+
+	if (StrEqual(sGameMode, "realism"))
+	{
+		Format(hostName, sizeof(hostName), "%s [写实]", g_HostNameOrigin);
+		return Plugin_Continue;
+	}
+
+	if (StrEqual(sGameMode, "community1"))
+	{
+		Format(hostName, sizeof(hostName), "%s [速递]", g_HostNameOrigin);
+	}
+
+	if (StrEqual(sGameMode, "community5"))
+	{
+		Format(hostName, sizeof(hostName), "%s [死门]", g_HostNameOrigin);
+	}
+
+	if (StrEqual(sGameMode, "mutation4"))
+	{
+		Format(hostName, sizeof(hostName), "%s [绝境]", g_HostNameOrigin);
+	}
+
+	// 防止因为插件加载顺序获取不到
+	if (!g_hSpecialsNum)
+		g_hSpecialsNum = FindConVar("l4d_infectedbots_max_specials");
+	
+	if (!g_hSpecialsSpawnTime)
+		g_hSpecialsSpawnTime = FindConVar("l4d_infectedbots_spawn_time_max");
+
+	if (g_hSpecialsNum && g_hSpecialsSpawnTime)
+		Format(hostName, sizeof(hostName), "%s [%d特%d秒]", hostName, GetConVarInt(g_hSpecialsNum), GetConVarInt(g_hSpecialsSpawnTime));
+
+	if (!g_hTrainingMode)
+		g_hTrainingMode = FindConVar("auto_revive_enable");
+	
+	if (g_hTrainingMode && g_hTrainingMode.BoolValue)
+		Format(hostName, sizeof(hostName), "%s[训练模式]", hostName);
+
+	g_hHostName.SetString(hostName);
+	return Plugin_Continue;
 }
 
 // public Action ShowArray(int iClient, int iArgs)

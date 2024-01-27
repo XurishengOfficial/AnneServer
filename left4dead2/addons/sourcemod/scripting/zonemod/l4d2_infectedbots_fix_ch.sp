@@ -94,12 +94,7 @@ static ConVar h_BotGhostTime;
 static ConVar h_DisableSpawnsTank;
 static ConVar h_TankLimit;
 static ConVar h_AdjustSpawnTimes;
-static ConVar h_HostName = null;
-static ConVar h_TrainingMode = null;
-static ConVar h_AggresiveSpecialsEnable = null;
-static ConVar h_SpecialsShouldAssaultEnable = null;
 
-static char g_HostNameOrigin[128];
 // char g_sPath[PLATFORM_MAX_PATH];
 
 /*********************MicroLeo's Code_CVar*******************************/
@@ -136,51 +131,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	return APLRes_Success; 
 }
 
-public Action Timer_SetHostName(Handle timer)
-{
-	char hostName[128];
-	Format(hostName, sizeof(hostName), "%s [%d特%d秒]", g_HostNameOrigin, GetConVarInt(h_MaxPlayerZombies), GetConVarInt(h_InfectedSpawnTimeMax));
-
-	if (h_AggresiveSpecialsEnable)
-	{
-		if (h_AggresiveSpecialsEnable.BoolValue)
-		{	
-			Format(hostName, sizeof(hostName), "%s[不藏特]", hostName);
-		}	
-	}
-	else
-	{
-		h_AggresiveSpecialsEnable = FindConVar("aggresive_specials_enable");
-	}
-	
-	if (h_SpecialsShouldAssaultEnable)
-	{
-		if (h_SpecialsShouldAssaultEnable.BoolValue)
-		{	
-			Format(hostName, sizeof(hostName), "%s[强攻]", hostName);
-		}	
-	}
-	else
-	{
-		h_SpecialsShouldAssaultEnable = FindConVar("specials_should_assault_enable");
-	}
-
-	if (h_TrainingMode)
-	{
-		if (h_TrainingMode.BoolValue)
-		{	
-			Format(hostName, sizeof(hostName), "%s[训练模式]", hostName);
-		}	
-	}
-	else
-	{
-		h_TrainingMode = FindConVar("auto_revive_enable");
-	}
-	
-	h_HostName.SetString(hostName);
-	// return Plugin_Stop;
-}
-
 // public void SetHostName()
 // {
 // 	// char hostName[128];
@@ -192,7 +142,6 @@ public Action Timer_SetHostName(Handle timer)
 public void OnConfigsExecuted()
 {
 	// SetHostName();
-	CreateTimer(1.0, Timer_SetHostName, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
 
 /*
@@ -367,8 +316,6 @@ public void OnPluginStart()
 	//Autoconfig for plugin
 	AutoExecConfig(true, "l4d2_infectedbots_fix_ch");
 	
-	h_HostName = FindConVar("hostname");
-	GetConVarString(h_HostName, g_HostNameOrigin, sizeof(g_HostNameOrigin));
 }
 
 
@@ -377,8 +324,6 @@ public void ConVarPluginEnable(ConVar convar, const char[] oldValue, const char[
 {
 	// sm_l4d2_infectedbots_enable
 	b_HasPluginEnabled = GetConVarBool(h_HasPluginEnabled);
-	if (b_HasPluginEnabled)
-		PrintToChatAll("开始答辩刷特");
 }
 
 public void ConVarBoomerLimit(ConVar convar, const char[] oldValue, const char[] newValue)
