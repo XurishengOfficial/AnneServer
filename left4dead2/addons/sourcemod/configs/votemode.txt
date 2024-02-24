@@ -5,19 +5,41 @@
 		"战役"
 		{
 			"cmd" "sm_cvar mp_gamemode coop"
+			"repeatable" "0"
 		}
 		"绝境"
 		{
 			"cmd" "sm_cvar mp_gamemode mutation4"
+			"repeatable" "0"
 		}
 		"速递"
 		{
 			"cmd" "sm_cvar mp_gamemode community1"
+			"repeatable" "0"
 		}
 		"死门"
 		{
 			"cmd" "sm_cvar mp_gamemode community5"
+			"repeatable" "0"
 		}	
+	}
+	"训练模式-[死门][速递]"
+	{
+		"关闭训练模式"
+		{
+			"cmd" "exec vote/Training_mode/0.cfg"
+			"repeatable" "0"
+		}
+		"综合防控-[16特5s]"
+		{
+			"cmd" "exec vote/Training_mode/1.cfg"
+			"repeatable" "0"
+		}
+		"空爆特训-[10特0s]"
+		{
+			"cmd" "exec vote/Training_mode/2.cfg"
+			"repeatable" "0"
+		}
 	}
 	"特感数量"
 	{
@@ -174,21 +196,6 @@
 		{
 			"cmd" "exec vote/Health_return/value/5.cfg"
 		}	
-	}
-	"训练模式-[死门][速递]"
-	{
-		"关闭训练模式"
-		{
-			"cmd" "exec vote/Training_mode/0.cfg"
-		}
-		"综合防控-[16特5s]"
-		{
-			"cmd" "exec vote/Training_mode/1.cfg"
-		}
-		"空爆特训-[10特0s]"
-		{
-			"cmd" "exec vote/Training_mode/2.cfg"
-		}
 	}
 	"自动解控"
 	{

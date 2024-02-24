@@ -146,7 +146,7 @@ public void OnConfigsExecuted()
 			if (!g_hModesKV.GotoFirstSubKey()) continue;
 
 			// 成功则进入到 <8特模式>
-			char s2ndItemName[64], sCmd[64];
+			char s2ndItemName[64], sCmd[64], iRepeatable;
 			while(--j && g_hModesKV.GotoNextKey(false))
 			{
 				// move. if j = 1, last 2nd pick idx is (j - 1 = 0), stay here.
@@ -154,13 +154,16 @@ public void OnConfigsExecuted()
 			
 			g_hModesKV.GetSectionName(s2ndItemName, sizeof(s2ndItemName));
 			g_hModesKV.GetString("cmd", sCmd, sizeof(sCmd));
+			/* 默认菜单选择的均需要重复 */
+			iRepeatable = g_hModesKV.GetNum("repeatable", 1);
 
-			LogMessage("===== Last Picked: %s, cmd = %s", s2ndItemName, sCmd);
+			LogMessage("===== Last Picked: %s, cmd = %s, repeatable = %d", s2ndItemName, sCmd, iRepeatable);
 
 			// GotoNextKey遍历不会在traverse stack上保存, 此时go back到上一级Section <特感数量>
 			g_hModesKV.GoBack();
 			// g_aMenuItemPick[i] = 0;
-			ServerCommand(sCmd);
+			if (iRepeatable)
+				ServerCommand(sCmd);
 		}
 		g_hModesKV.GotoNextKey(false);
 	}
@@ -291,8 +294,6 @@ public int VoteModeMenuHandler(Menu menu, MenuAction action, int param1, int par
 
 		// 记录主菜单选项
 		g_i1stMenuItemPick = param2;
-		if (g_i1stMenuItemPick == 0)
-			g_i1stMenuItemPick = -1;
 		g_hModesKV.Rewind();
 
 		if (g_hModesKV.JumpToKey(g_s1stMenuItemPick) && g_hModesKV.GotoFirstSubKey() && ++g_i2ndMenuItemNum) {
