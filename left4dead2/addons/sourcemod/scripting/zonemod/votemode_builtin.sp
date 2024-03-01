@@ -107,7 +107,7 @@ public void OnConfigsExecuted()
 		g_iLoadInitialConfig = 1;
 		LoadGameModeConfig();
 		// 用于Server首次启动时执行对应mode cfg 首个玩家加入后会自动换图
-		ServerCommand("sm_restartmap");
+		// ServerCommand("sm_restartmap");
 		return;
 	}
 	for (int i = 1; i < FIRSTMENUITEM_NUM_MAX; ++i)
