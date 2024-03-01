@@ -1,2 +1,5 @@
 /left4dead2/addons/sourcemod/scripting/zonemod/compile.dat
 /left4dead2/addons/sourcemod/scripting/zonemod/compiled/
+*.dll
+*.smx
+*.exe
