@@ -35,10 +35,58 @@
 			"cmd" "exec vote/Training_mode/1.cfg"
 			"repeatable" "0"
 		}
-		"空爆特训-[10特0s]"
+		"空爆特训-[10特1s]"
 		{
 			"cmd" "exec vote/Training_mode/2.cfg"
 			"repeatable" "0"
+		}
+	}
+	"开位"
+	{
+		"4"
+		{
+			"cmd" "exec vote/Slots/4.cfg"
+			"repeatable" "1"
+		}
+		"5"
+		{
+			"cmd" "exec vote/Slots/5.cfg"
+			"repeatable" "1"
+		}
+		"6"
+		{
+			"cmd" "exec vote/Slots/6.cfg"
+			"repeatable" "1"
+		}
+		"7"
+		{
+			"cmd" "exec vote/Slots/7.cfg"
+			"repeatable" "1"
+		}
+		"8"
+		{
+			"cmd" "exec vote/Slots/8.cfg"
+			"repeatable" "1"
+		}
+		"9"
+		{
+			"cmd" "exec vote/Slots/9.cfg"
+			"repeatable" "1"
+		}
+		"10"
+		{
+			"cmd" "exec vote/Slots/10.cfg"
+			"repeatable" "1"
+		}
+		"11"
+		{
+			"cmd" "exec vote/Slots/11.cfg"
+			"repeatable" "1"
+		}
+		"12"
+		{
+			"cmd" "exec vote/Slots/12.cfg"
+			"repeatable" "1"
 		}
 	}
 	"特感数量"
