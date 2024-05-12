@@ -56,7 +56,9 @@ int
 	g_iKillCI[MAXPLAYERS+1],
 	g_iFriendlyFire[MAXPLAYERS+1],
 	g_iTankDmg[MAXPLAYERS+1][MAXPLAYERS+1],	//[victim][attacker]
-	g_iSortField;
+	g_iSortField,
+	g_iHp[MAXPLAYERS+1],
+	g_iTempHp[MAXPLAYERS+1];
 
 float
 	g_fWitchHealth[MAX_ENTITY],
@@ -94,11 +96,14 @@ public void OnPluginStart()
 	g_cvRepeatNotifyTime.AddChangeHook(ConVarChanged_Time);
 
 	HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
+	// HookEvent("player_hurt", Event_PlayerHurt);
+
 	HookEvent("map_transition", Event_RoundEnd, EventHookMode_PostNoCopy);
 	HookEvent("round_end", Event_RoundEnd, EventHookMode_PostNoCopy);
 	HookEvent("finale_vehicle_leaving", Event_RoundEnd, EventHookMode_PostNoCopy);
 
 	HookEvent("player_spawn", Event_PlayerSpawn);
+	HookEvent("player_incapacitated_start", Event_PlayerIncapStart, EventHookMode_Pre);
 	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
 	
 	HookEvent("witch_spawn", Event_WitchSpawn);
@@ -231,13 +236,33 @@ public void OnClientPutInServer(int client)
 	ClearWitchDamage(client, CLEAR_ATTACKER);
 
 	/* SDKHook_OnTakeDamageAlive不会统计一枪黑倒的友伤 */
-	SDKUnhook(client, SDKHook_OnTakeDamage, OnTakeDamage);
-	SDKHook(client, SDKHook_OnTakeDamage, OnTakeDamage);
+	SDKUnhook(client, SDKHook_OnTakeDamageAlive, OnTakeDamageAlive);
+	SDKHook(client, SDKHook_OnTakeDamageAlive, OnTakeDamageAlive);
+
+	SDKUnhook(client, SDKHook_TraceAttack, TraceAttackFF);
+	SDKHook(client, SDKHook_TraceAttack, TraceAttackFF);
 }
 
 public void OnClientDisconnect(int client)
 {
 	// g_iFriendlyFire[client] = 0;
+}
+
+stock int L4D_GetPlayerTempHealth(int client)
+{
+	if (!IsValidSur(client)) return 0;
+	
+	static Handle painPillsDecayCvar = INVALID_HANDLE;
+	if (painPillsDecayCvar == INVALID_HANDLE)
+	{
+		painPillsDecayCvar = FindConVar("pain_pills_decay_rate");
+		if (painPillsDecayCvar == INVALID_HANDLE)
+		{
+			return -1;
+		}
+	}
+	int tempHealth = RoundToCeil(GetEntPropFloat(client, Prop_Send, "m_healthBuffer") - ((GetGameTime() - GetEntPropFloat(client, Prop_Send, "m_healthBufferTime")) * GetConVarFloat(painPillsDecayCvar))) - 1;
+	return tempHealth < 0 ? 0 : tempHealth;
 }
 
 void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
@@ -250,7 +275,7 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 	}
 }
 
-Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype)
+Action OnTakeDamageAlive(int victim, int &attacker, int &inflictor, float &damage, int &damagetype)
 {
 	if (damage <= 0.0)
 		return Plugin_Continue;
@@ -308,7 +333,8 @@ Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, in
 		{
 			if (attacker != victim)
 			{
-				g_iFriendlyFire[attacker] += RoundToFloor(damage);
+				int actualDmg = RoundToFloor(damage) > g_iHp[victim] + g_iTempHp[victim] ? g_iHp[victim] + g_iTempHp[victim] : RoundToFloor(damage);
+				g_iFriendlyFire[attacker] += actualDmg;
 			}
 		}
 	}
@@ -370,6 +396,35 @@ public void Event_PlayerDisconnect(Event hEvent, const char[] name, bool dontBro
 	}
 }
 
+Action TraceAttackFF(int iVictim, int &iAttacker, int &iInflictor, float &fDamage, int &iDamagetype, int &iAmmotype, int iHitbox, int iHitgroup)
+{
+	if (IsValidSur(iVictim) && IsValidSur(iAttacker))
+	{
+		int tempHp = L4D_GetPlayerTempHealth(iVictim);
+		int hp = GetClientHealth(iVictim);
+		// PrintToChatAll("%d, %d ,%d", hp, tempHp, RoundToFloor(fDamage));
+		g_iHp[iVictim] = hp;
+		g_iTempHp[iVictim] = tempHp;
+	}
+	return Plugin_Continue;
+}
+
+void Event_PlayerIncapStart(Handle event, const char [] name, bool dontBroadcast)
+{
+	int victim = GetClientOfUserId(GetEventInt(event, "userid"));
+	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
+	if (!(IsValidSur(victim) && IsValidSur(attacker)) || attacker == victim) return;
+	
+	char attackerName[64], victimName[64];
+	GetClientName(attacker, attackerName, sizeof(attackerName) - 1);
+	GetClientName(victim, victimName, sizeof(victimName) - 1);
+
+	g_iFriendlyFire[attacker] += (g_iHp[victim] + g_iTempHp[victim]);
+	
+	// CPrintToChatAll("{blue}?{olive} %s {blue}对{olive} %s {blue}造成了{yellow} %i {blue}点伤害并击倒了对方", attackerName, victimName, g_iHp[victim] + g_iTempHp[victim]);
+	return;
+}
+
 void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	int attacker = GetClientOfUserId(event.GetInt("attacker"));
@@ -392,6 +447,22 @@ void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 
 		ShowTankDamageRank(victim);
 		ClearTankDamage(victim, CLEAR_VICTIM);
+	}
+	
+	else if (IsValidSur(victim) && IsValidSur(attacker))
+	{
+		if (attacker != victim)
+		{
+			char attackerName[64], victimName[64];
+			GetClientName(attacker, attackerName, sizeof(attackerName) - 1);
+			GetClientName(victim, victimName, sizeof(victimName) - 1);
+
+			// will fire hurt before?
+			// g_iFriendlyFire[attacker] += (g_iHp[victim] + g_iTempHp[victim]);
+			
+			// CPrintToChatAll("{blue}?{olive} %s {blue}对{olive} %s {blue}造成了{yellow} %i {blue}点伤害并击杀了对方", attackerName, victimName, g_iHp[victim] + g_iTempHp[victim]);
+		}
+		return;
 	}
 }
 
