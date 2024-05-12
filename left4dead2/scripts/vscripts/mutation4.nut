@@ -2,7 +2,7 @@ Msg("Activating Mutation4 Script\n");
 
 DirectorOptions <-
 {	
-	ActiveChallenge = 1
+	//ActiveChallenge = 1
 
 // 特感刷新秒数，绝境默认15
 	cm_SpecialRespawnInterval = 15
@@ -21,6 +21,9 @@ DirectorOptions <-
 
 // 用来防止藏特感的参数，不用管
 	cm_AggressiveSpecials = 1
+
+// Relax => build
+	RelaxMaxFlowTravel = 3000
 
 	DefaultItems =
 	[
@@ -52,10 +55,41 @@ DirectorOptions <-
 	}
 }
 
+last_set <- 0;
+SIFastRespawn <- 0;
+
+function OnGameEvent_player_death( params )
+{
+    local EntityKill = GetPlayerFromUserID(params.userid);
+	local _interval = DirectorOptions.cm_SpecialRespawnInterval;
+    if (IsPlayerABot(EntityKill)
+        && EntityKill.GetZombieType() < 7
+        && EntityKill.GetZombieType() != 4)
+    {
+		if (SIFastRespawn == 1)
+		{
+			//ClientPrint(null, DirectorScript.HUD_PRINTTALK, "quick spawn");
+			last_set = Time();
+			EntityKill.Kill();
+			if (Time() >= last_set + DirectorOptions.cm_SpecialRespawnInterval)
+			{
+				Director.ResetSpecialTimers();
+			}
+		}
+    }
+    else
+    {
+        return
+    }
+}
+
 function update_settings()
 {
     local cvarSINum = (Convars.GetFloat("l4d_infectedbots_max_specials")).tointeger()
     local cvarSIRespawnInterval = (Convars.GetFloat("l4d_infectedbots_spawn_time_max")).tointeger()
+    local cvarSIFlowTravel = (Convars.GetFloat("l4d_infectedbots_spawn_relax_flow_travel_max")).tointeger()
+    
+    SIFastRespawn = (Convars.GetFloat("l4d_infectedbots_fast_spawn")).tointeger()
 
     local otherSINum = cvarSINum / 4
     otherSINum = otherSINum > 6 ? 6 : otherSINum
@@ -73,6 +107,7 @@ function update_settings()
 	DirectorOptions.JockeyLimit = otherSINum
 	DirectorOptions.ChargerLimit =otherSINum
 	DirectorOptions.SpitterLimit = spitterNum
+	DirectorOptions.RelaxMaxFlowTravel = cvarSIFlowTravel
 	
 	DirectorOptions.cm_AggressiveSpecials = 1
 }
