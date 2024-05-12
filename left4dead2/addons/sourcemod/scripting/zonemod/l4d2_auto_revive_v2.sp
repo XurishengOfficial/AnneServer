@@ -25,7 +25,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#include <colors>
+#include <multicolors>
 #include <left4dhooks>
 #include <l4d2util_constants>
 #include <dhooks>
@@ -62,11 +62,17 @@ public void ConVarChanged_Enable(ConVar hConvar, const char[] sOldValue, const c
 	
 	if (g_bCvarAutoReViveEnable)
 	{
-		PrintToChatAll("[SM] 已开启自动解控");
+		CPrintToChatAll("{yellow}AutoRevive{default}: {blue}已开启{olive} 自动解控{default}.");
+		for (int client = 0; client < 32; ++client)
+		{
+			if (!IsClientAndInGame(client) || GetClientTeam(client) != L4D2Team_Survivor) 
+				continue;
+			SetEntityHealth(client, 200);
+		}
 	}
 	else
 	{
-		PrintToChatAll("[SM] 已关闭自动解控");
+		CPrintToChatAll("{yellow}AutoRevive{default}: {blue}已关闭{olive} 自动解控{default}.");
 	}
 }
 
@@ -76,21 +82,21 @@ public void ConVarChanged_Type(ConVar hConvar, const char[] sOldValue, const cha
 
 	if (g_bCvarAutoReViveType)
 	{
-		PrintToChatAll("[SM] 处死特感模式为: ALL");
+		CPrintToChatAll("{yellow}AutoRevive{default}: {blue}处死特感方式为{olive} 所有 {default}.");
 	}
 	else
 	{
-		PrintToChatAll("[SM] 处死特感模式为: Single");
+		CPrintToChatAll("{yellow}AutoRevive{default}: {blue}处死特感方式为{olive} 单只 {default}.");
 	}
 }
 
 public void OnPluginStart()
 {
 	// g_hCvarDmgThreshold = CreateConVar("sm_auto_revive_dmgthreshold", "1", "Amount of damage done (at once) before SI suicides.", _, true, 1.0);
-	g_hCvarAutoReViveEnable = CreateConVar("auto_revive_enable", "0", "是否开启自动解控", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	g_hCvarAutoReViveEnable = CreateConVar("auto_revive_enable", "0", "是否开启自动解控", FCVAR_NONE, true, 0.0, true, 1.0);
 
 	// 0: 处死单只特感; 1: 处死所有特感
-	g_hCvarAutoReViveType = CreateConVar("auto_revive_type", "0", "解控时仅处死控制玩家的特感", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	g_hCvarAutoReViveType = CreateConVar("auto_revive_type", "0", "解控时仅处死控制玩家的特感", FCVAR_NONE, true, 0.0, true, 1.0);
 
 	GetCvars();
 
@@ -109,16 +115,6 @@ public void OnPluginStart()
 	g_hCvarAutoReViveEnable.AddChangeHook(ConVarChanged_Enable);
 	g_hCvarAutoReViveType.AddChangeHook(ConVarChanged_Type);
 	AutoExecConfig(true, "l4d2_auto_revive");
-    RegConsoleCmd("sm_sp", ShowPosition, "Prints the current origin.");
-	
-}
-
-public Action ShowPosition(int client, int args)
-{
-    float vec[3];
-	GetClientAbsOrigin(client, vec);
-	PrintToChat(client, "%.2f %.2f %.2f", vec[0], vec[1], vec[2]);
-    return Plugin_Handled;
 }
 
 public Action KillInfected(Handle timer, int index)
