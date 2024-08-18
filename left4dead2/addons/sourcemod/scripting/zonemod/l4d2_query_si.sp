@@ -99,7 +99,7 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 		char queryResult[256];
 		if (siNum)
 		{
-			Format(queryResult, sizeof(queryResult), "{olive}❀{default} 剩余特感[ {blue}%d {default}]", siNum);
+			Format(queryResult, sizeof(queryResult), "{olive}★{default} 剩余特感[ {blue}%d {default}]", siNum);
 			if (tankNum)
 				Format(queryResult, sizeof(queryResult), "%s [{blue}Tank: {default}%d]", queryResult, tankNum);
 			if (smokerNum)
@@ -117,7 +117,7 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 		}
 		else
 		{
-			Format(queryResult, sizeof(queryResult), "{olive}❀❀{default} 无特感存活.");
+			Format(queryResult, sizeof(queryResult), "{olive}★{default} 无特感存活.");
 		}
 		CPrintToChatAll(queryResult);
 		g_iShouldQuery = 0;
