@@ -23,7 +23,7 @@ DirectorOptions <-
 	cm_AggressiveSpecials = 1
 
 // Relax => build
-	RelaxMaxFlowTravel = 3000
+	//RelaxMaxFlowTravel = 3000
 
 	DefaultItems =
 	[
@@ -107,7 +107,7 @@ function update_settings()
 	DirectorOptions.JockeyLimit = otherSINum
 	DirectorOptions.ChargerLimit =otherSINum
 	DirectorOptions.SpitterLimit = spitterNum
-	DirectorOptions.RelaxMaxFlowTravel = cvarSIFlowTravel
+	//DirectorOptions.RelaxMaxFlowTravel = cvarSIFlowTravel
 	
 	DirectorOptions.cm_AggressiveSpecials = 1
 }
