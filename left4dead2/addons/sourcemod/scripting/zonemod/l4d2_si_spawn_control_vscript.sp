@@ -3,9 +3,13 @@
 #include <multicolors>
 #include <left4dhooks>
 
-#define VSCRIPT_RET_ERROR 		-1
-#define VSCRIPT_RET_SUCCESS 	0
-#define VSCRIPT_RET_NOCHANGE 	-2
+#define VSCRIPT_RET_ERROR 			-1
+#define VSCRIPT_RET_SUCCESS 		0
+#define VSCRIPT_RET_NOCHANGE 		1
+#define VSCRIPT_RET_CHANGED 		2
+#define VSCRIPT_RET_INIT 			3
+
+#define DIRECTORSCRIPT_TYPE			"DirectorScript.MapScript.LocalScript.DirectorOptions"
 
 ConVar g_hDirectorSINum;
 ConVar g_hDirectorSIRespawnInterval;
@@ -17,8 +21,8 @@ bool g_bDirectorInfoPrinted;
 public Plugin myinfo =
 {
 	name = "SI Spawn Set Plugin For Vscript",
-	author = "Sir.P / Cirno",
-	description = "通过投票修改脚本刷特",
+	author = "Cirno",
+	description = "通过投票修改脚本刷特. 导演参数被改变时发出提示.",
 	version = "1.0",
 	url = ""
 };
@@ -34,18 +38,17 @@ public void OnPluginStart()
 	RegAdminCmd("sm_si_num", Cmd_ChangeSINum, ADMFLAG_GENERIC, "Admin change the director option cm_MaxSpecials");
 	RegAdminCmd("sm_si_time", Cmd_ChangeSITime, ADMFLAG_GENERIC, "Admin change the director option cm_SpecialRespawnInterval");
 	RegAdminCmd("sm_si_fastrespawn", Cmd_ChangeSIFastSpawn, ADMFLAG_GENERIC, "Admin enable/disable script SI fast spawn");
-	RegAdminCmd("sm_si_flowtravel", Cmd_ChangeFlowTravel, ADMFLAG_GENERIC, "Admin change the director option RelaxMaxFlowTravel.May overwritten by map script.");
-	// RegAdminCmd("sm_si_time", Cmd_ChangeSITime, ADMFLAG_GENERIC, "Change the script SI spawn time");
+	RegAdminCmd("sm_si_flowtravel", Cmd_ChangeFlowTravel, ADMFLAG_GENERIC, "Admin change the director option RelaxMaxFlowTravel. The upper bound of map script");
 
 	g_iCurDirectorFlowTravel = g_hDirectorFlowTravel.IntValue;
 
 	HookConVarChange(g_hDirectorSINum, reload_script);
 	HookConVarChange(g_hDirectorSIRespawnInterval, reload_script);
 	HookConVarChange(g_hDirectorSIFastRespawn, reload_script);
-	HookConVarChange(g_hDirectorFlowTravel, reload_script);
+	HookConVarChange(g_hDirectorFlowTravel, OnConvarRelaxMaxFlowTravelChanged);
 
 	HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
-	HookEvent("player_left_start_area", Event_PlayerLeftStartArea, EventHookMode_PostNoCopy);
+	HookEvent("player_left_safe_area", Event_PlayerLeftSafeArea, EventHookMode_PostNoCopy);
 
 
 	CreateTimer(1.0, CheckDirectorOptions, _, TIMER_REPEAT);
@@ -56,29 +59,38 @@ public void CPrintDirectorInfo()
 	CPrintToChatAll("{yellow}SIControlScript{default}: {blue}当前特感最高同屏{yellow} %d {blue}特，复活时间{yellow} %d {blue}秒，地图推进距离{yellow} %d {blue}码, 特感快速补位{yellow}%s", 
 		g_hDirectorSINum.IntValue, 
 		g_hDirectorSIRespawnInterval.IntValue,
-		GetMapScriptRelaxMaxFlowTravel(),
+		g_iCurDirectorFlowTravel,
 		g_hDirectorSIFastRespawn.IntValue ? "开启" : "关闭"
 	);
 }
 
-/* 地图的FlowTravel和默认的FlowTravel(director_relax_max_flow_travel)是覆盖关系, 后赋值的生效 */
+public void CPrintDirectorInfo2()
+{
+	CPrintToChatAll("{yellow}SIControlScript{default}: {blue}当前特感最高同屏{yellow} %d {blue}特，复活时间{yellow} %d {blue}秒，地图推进距离{yellow} %d {blue}码, 特感快速补位{yellow}%s", 
+		g_hDirectorSINum.IntValue, 
+		g_hDirectorSIRespawnInterval.IntValue,
+		g_hDirectorFlowTravel.IntValue,
+		g_hDirectorSIFastRespawn.IntValue ? "开启" : "关闭"
+	);
+}
 
-public int GetMapScriptRelaxMaxFlowTravel()
+public int GetMapScriptParam(const char [] sParamName, int &iOutput)
 {
 	char code[256];
-	char sMapMaxFlow[8];
-	FormatEx(code, sizeof(code), "DirectorScript.MapScript.LocalScript.DirectorOptions.RelaxMaxFlowTravel");
-	if (L4D2_GetVScriptOutput(code, sMapMaxFlow, sizeof(sMapMaxFlow)))
+	char sRetValue[8];
+	FormatEx(code, sizeof(code), "%s.%s", DIRECTORSCRIPT_TYPE, sParamName);
+	if (L4D2_GetVScriptOutput(code, sRetValue, sizeof(sRetValue)))
 	{
-		return StringToInt(sMapMaxFlow);
+		iOutput = StringToInt(sRetValue);
+		return VSCRIPT_RET_SUCCESS;
 	}
 	return VSCRIPT_RET_ERROR;
 }
 
-public int SetMapScriptRelaxMaxFlowTravel(int iFlow)
+public int SetMapScriptParam(const char [] sParamName, int iParamValue)
 {
 	char code[256];
-	FormatEx(code, sizeof(code), "DirectorScript.MapScript.LocalScript.DirectorOptions.RelaxMaxFlowTravel <- %d", iFlow);
+	FormatEx(code, sizeof(code), "%s.%s <- %d", DIRECTORSCRIPT_TYPE, sParamName, iParamValue);
 	if (L4D2_ExecVScriptCode(code))
 	{
 		return VSCRIPT_RET_SUCCESS;
@@ -86,12 +98,48 @@ public int SetMapScriptRelaxMaxFlowTravel(int iFlow)
 	return VSCRIPT_RET_ERROR;
 }
 
+/* DirectorOptions Hook by a 1s timer */
+public int CheckSetMapScriptParamChange(const char [] sParamName, int &iOldParamValue, int iDefParamValue)
+{
+	// directorOptions table exist
+	int iNewParamValue;
+	if (VSCRIPT_RET_SUCCESS == GetMapScriptParam(sParamName, iNewParamValue))
+	{
+		if (iOldParamValue == iNewParamValue) return VSCRIPT_RET_NOCHANGE;
+
+		iOldParamValue = iNewParamValue;
+		return VSCRIPT_RET_CHANGED;
+	}
+
+	// do not exist? create it!
+	if (VSCRIPT_RET_SUCCESS == SetMapScriptParam(sParamName, iDefParamValue))
+	{
+		iOldParamValue = iDefParamValue;
+		return VSCRIPT_RET_INIT;
+	}
+
+	return VSCRIPT_RET_ERROR;
+}
+
+public int DelMapScriptParam(const char [] sParamName)
+{
+	char code[256];
+	FormatEx(code, sizeof(code), "%s.%s <- 0;delete %s.%s", DIRECTORSCRIPT_TYPE, sParamName, DIRECTORSCRIPT_TYPE, sParamName);
+	if (L4D2_ExecVScriptCode(code))
+		return VSCRIPT_RET_SUCCESS;
+	
+	return VSCRIPT_RET_ERROR;
+}
+
 public void Event_RoundStart(Event hEvent, const char[] sEventName, bool bDontBroadcast)
 {
 	g_bDirectorInfoPrinted = false;
+
+	/* set params to default value or customized value */
+	g_iCurDirectorFlowTravel = g_hDirectorFlowTravel.IntValue;
 }
 
-public void Event_PlayerLeftStartArea(Event hEvent, const char[] sEventName, bool bDontBroadcast)
+public void Event_PlayerLeftSafeArea(Event hEvent, const char[] sEventName, bool bDontBroadcast)
 {
 	if (!g_bDirectorInfoPrinted)
 	{
@@ -102,46 +150,29 @@ public void Event_PlayerLeftStartArea(Event hEvent, const char[] sEventName, boo
 
 public Action CheckDirectorOptions(Handle timer)
 {
-	// char code[256];
-	// char sMapMaxFlow[8];
-
-	// 一些用于记录VScript的注释
-	// FormatEx(code, sizeof(code), "Director.GetMapName()");
-	// FormatEx(code, sizeof(code), "ret <- Director.GetMapName(); <RETURN>ret</RETURN>");
-	// FormatEx(code, sizeof(code), "DirectorScript.MapScript.LocalScript.DirectorOptions.RelaxMaxFlowTravel");
-
-	// DirectorScript.MapScript.LocalScript.DirectorOptions.RelaxMaxFlowTravel
-	// FormatEx(code, sizeof(code), "ret <- Director.GetMapNumber(); <RETURN>ret</RETURN>");
-	// FormatEx(code, sizeof(code), "local player = null; while(player = Entities.FindByClassname(player, \"player\")) { if(player.IsSurvivor()) { <RETURN>player.GetName()</RETURN> } }");
-	
-	int iMapMaxFlow = -1;
-	if (VSCRIPT_RET_ERROR != (iMapMaxFlow = GetMapScriptRelaxMaxFlowTravel()))
+	int ret = CheckSetMapScriptParamChange("RelaxMaxFlowTravel", g_iCurDirectorFlowTravel, g_hDirectorFlowTravel.IntValue);
+	if ( VSCRIPT_RET_CHANGED == ret)
 	{
-		if (iMapMaxFlow != g_iCurDirectorFlowTravel)
+		/* 地图设置的flow不能超过我们设置的 */
+		if (g_iCurDirectorFlowTravel > g_hDirectorFlowTravel.IntValue)
 		{
-			g_iCurDirectorFlowTravel = iMapMaxFlow;
-			CPrintToChatAll("{yellow}SIControlScript{default}: {blue}当前地图推进距离设置为 {yellow} %d {blue}码.", g_iCurDirectorFlowTravel);
+			g_iCurDirectorFlowTravel = g_hDirectorFlowTravel.IntValue;
+			SetMapScriptParam("RelaxMaxFlowTravel", g_iCurDirectorFlowTravel);
 		}
-	}
-	else
-	{
-		/* 更换地图后/首次运行时, 若地图未设置则会重新变回默认. DirectorOptions Table中不会有RelaxMaxFlowTravel键值对 => 写入!!! */
-		g_iCurDirectorFlowTravel = g_hDirectorFlowTravel.IntValue;
-
-		if (VSCRIPT_RET_SUCCESS == SetMapScriptRelaxMaxFlowTravel(g_iCurDirectorFlowTravel))
-		{
-			/* 这个Print玩家应该看不到 */
-			CPrintToChatAll("{yellow}SIControlScript{default}: {blue}当前地图默认推进距离设置为 {yellow} %d {blue}码.", g_iCurDirectorFlowTravel);
-		}
+		CPrintToChatAll("{yellow}SIControlScript{default}: {blue}当前地图默认推进距离设置为 {yellow} %d {blue}码.", g_iCurDirectorFlowTravel);
 	}
 	return Plugin_Continue;
 }
 
+public OnConvarRelaxMaxFlowTravelChanged(Handle convar, char[] oldValue, char[] newValue)
+{
+	/* 在下次timer周期内重新创建 同步convar的值到g_iCurDirectorFlowTravel */
+	DelMapScriptParam("RelaxMaxFlowTravel");
+	CPrintDirectorInfo2();
+}
+
 public reload_script(Handle convar, char[] oldValue, char[] newValue)
 {
-	/* 更新部分参数 */
-	g_iCurDirectorFlowTravel = g_hDirectorFlowTravel.IntValue;
-
 	ConVar gamemode = FindConVar("mp_gamemode");
 	char modestr[64];
 	gamemode.GetString(modestr, 64);
