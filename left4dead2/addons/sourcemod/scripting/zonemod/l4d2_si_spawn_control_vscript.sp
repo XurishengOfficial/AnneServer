@@ -11,12 +11,18 @@
 
 #define DIRECTORSCRIPT_TYPE			"DirectorScript.MapScript.LocalScript.DirectorOptions"
 
+#define DEF_LOCK_TEMP				0
+#define DEF_LOCK_TEMP_FINAL			1
+
 ConVar g_hDirectorSINum;
 ConVar g_hDirectorSIRespawnInterval;
 ConVar g_hDirectorSIFastRespawn;
 ConVar g_hDirectorFlowTravel;
 
 int g_iCurDirectorFlowTravel;
+int g_iDefLockTempo;
+int g_iDefBuildUpMinInterval;
+
 bool g_bDirectorInfoPrinted;
 public Plugin myinfo =
 {
@@ -74,14 +80,19 @@ public void CPrintDirectorInfo2()
 	);
 }
 
-public int GetMapScriptParam(const char [] sParamName, int &iOutput)
+public int GetIntMapScriptParam(const char [] sParamName, int &iOutput)
 {
 	char code[256];
 	char sRetValue[8];
 	FormatEx(code, sizeof(code), "%s.%s", DIRECTORSCRIPT_TYPE, sParamName);
 	if (L4D2_GetVScriptOutput(code, sRetValue, sizeof(sRetValue)))
 	{
-		iOutput = StringToInt(sRetValue);
+		if (!strncmp(sRetValue, "true", 4)) 
+			iOutput = 1;
+		else if (!strncmp(sRetValue, "false", 5)) 
+			iOutput = 0;
+		else 
+			iOutput = StringToInt(sRetValue);
 		return VSCRIPT_RET_SUCCESS;
 	}
 	return VSCRIPT_RET_ERROR;
@@ -103,7 +114,7 @@ public int CheckSetMapScriptParamChange(const char [] sParamName, int &iOldParam
 {
 	// directorOptions table exist
 	int iNewParamValue;
-	if (VSCRIPT_RET_SUCCESS == GetMapScriptParam(sParamName, iNewParamValue))
+	if (VSCRIPT_RET_SUCCESS == GetIntMapScriptParam(sParamName, iNewParamValue))
 	{
 		if (iOldParamValue == iNewParamValue) return VSCRIPT_RET_NOCHANGE;
 
@@ -148,10 +159,18 @@ public void Event_PlayerLeftSafeArea(Event hEvent, const char[] sEventName, bool
 	}
 }
 
+/* 有没有更好的办法? 一次性执行多个参数获取? */
 public Action CheckDirectorOptions(Handle timer)
 {
-	int ret = CheckSetMapScriptParamChange("RelaxMaxFlowTravel", g_iCurDirectorFlowTravel, g_hDirectorFlowTravel.IntValue);
-	if ( VSCRIPT_RET_CHANGED == ret)
+	int iShouldPrint = 0;
+	int iDefRelaxMaxFlowTravel = g_hDirectorFlowTravel.IntValue;
+
+	/* params below will not change from Convar, so don't use Convar but local var instead */
+	int iDefLockTempo = L4D_IsMissionFinalMap();
+	int iDefBuildUpMinInterval = 15;
+
+	/* Will return INIT every round start! */
+	if ( VSCRIPT_RET_CHANGED == CheckSetMapScriptParamChange("RelaxMaxFlowTravel", g_iCurDirectorFlowTravel, iDefRelaxMaxFlowTravel))
 	{
 		/* 地图设置的flow不能超过我们设置的 */
 		if (g_iCurDirectorFlowTravel > g_hDirectorFlowTravel.IntValue)
@@ -159,7 +178,26 @@ public Action CheckDirectorOptions(Handle timer)
 			g_iCurDirectorFlowTravel = g_hDirectorFlowTravel.IntValue;
 			SetMapScriptParam("RelaxMaxFlowTravel", g_iCurDirectorFlowTravel);
 		}
-		CPrintToChatAll("{yellow}SIControlScript{default}: {blue}当前地图默认推进距离设置为 {yellow} %d {blue}码.", g_iCurDirectorFlowTravel);
+		iShouldPrint = 1;
+	}
+
+	if ( VSCRIPT_RET_CHANGED == CheckSetMapScriptParamChange("LockTempo", g_iDefLockTempo, iDefLockTempo))
+	{
+		iShouldPrint = 1;
+	}
+
+	if ( VSCRIPT_RET_CHANGED == CheckSetMapScriptParamChange("BuildUpMinInterval", g_iDefBuildUpMinInterval, iDefBuildUpMinInterval))
+	{
+		iShouldPrint = 1;
+	}
+	
+	if (iShouldPrint)
+	{
+		CPrintToChatAll("{yellow}SIControlScript{default}: {blue}当前地图默认推进距离设置为 {yellow}%d {blue}码, 阶段{yellow}%s{blue}, Build up至少 {yellow}%d {blue}秒", 
+			g_iCurDirectorFlowTravel,
+			g_iDefLockTempo ? "锁定" : "不锁定",
+			g_iDefBuildUpMinInterval
+		);
 	}
 	return Plugin_Continue;
 }
