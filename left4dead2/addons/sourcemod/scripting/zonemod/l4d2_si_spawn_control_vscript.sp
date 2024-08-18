@@ -22,8 +22,42 @@ ConVar g_hDirectorFlowTravel;
 int g_iCurDirectorFlowTravel;
 int g_iDefLockTempo;
 int g_iDefBuildUpMinInterval;
+int g_iDefPreferredSpecialDirection;
 
 bool g_bDirectorInfoPrinted;
+
+enum PreferredDirectionType
+{
+	SPAWN_NO_PREFERENCE = -1,
+	SPAWN_ANYWHERE,
+	SPAWN_BEHIND_SURVIVORS,
+	SPAWN_NEAR_IT_VICTIM,
+	SPAWN_SPECIALS_IN_FRONT_OF_SURVIVORS,
+	SPAWN_SPECIALS_ANYWHERE,
+	SPAWN_FAR_AWAY_FROM_SURVIVORS,
+	SPAWN_ABOVE_SURVIVORS,
+	SPAWN_IN_FRONT_OF_SURVIVORS,
+	SPAWN_VERSUS_FINALE_DISTANCE,
+	SPAWN_LARGE_VOLUME,
+	SPAWN_NEAR_POSITION,
+};
+
+char g_sPreferredDirectionTypeArray[][32] = 
+{
+	"NO_PREFERENCE",
+	"ANYWHERE",
+	"BEHIND_SURVIVORS",
+	"NEAR_IT_VICTIM",
+	"SPECIALS_IN_FRONT_OF_SURVIVORS",
+	"SPECIALS_ANYWHERE",
+	"FAR_AWAY_FROM_SURVIVORS",
+	"ABOVE_SURVIVORS",
+	"IN_FRONT_OF_SURVIVORS",
+	"VERSUS_FINALE_DISTANCE",
+	"LARGE_VOLUME",
+	"NEAR_POSITION",
+};
+
 public Plugin myinfo =
 {
 	name = "SI Spawn Set Plugin For Vscript",
@@ -80,6 +114,8 @@ public void CPrintDirectorInfo2()
 	);
 }
 
+/* or L4D2_GetScriptValueInt("RelaxMaxFlowTravel", 114514) */
+/* 114514 is default value when search fail... */
 public int GetIntMapScriptParam(const char [] sParamName, int &iOutput)
 {
 	char code[256];
@@ -87,6 +123,9 @@ public int GetIntMapScriptParam(const char [] sParamName, int &iOutput)
 	FormatEx(code, sizeof(code), "%s.%s", DIRECTORSCRIPT_TYPE, sParamName);
 	if (L4D2_GetVScriptOutput(code, sRetValue, sizeof(sRetValue)))
 	{
+		// PrintToChatAll("%s = %s", sParamName, sRetValue);
+
+		/* hardcore use for LockTempo qwq */
 		if (!strncmp(sRetValue, "true", 4)) 
 			iOutput = 1;
 		else if (!strncmp(sRetValue, "false", 5)) 
@@ -168,6 +207,7 @@ public Action CheckDirectorOptions(Handle timer)
 	/* params below will not change from Convar, so don't use Convar but local var instead */
 	int iDefLockTempo = L4D_IsMissionFinalMap();
 	int iDefBuildUpMinInterval = 15;
+	int iDefPreferredSpecialDirection = -1;
 
 	/* Will return INIT every round start! */
 	if ( VSCRIPT_RET_CHANGED == CheckSetMapScriptParamChange("RelaxMaxFlowTravel", g_iCurDirectorFlowTravel, iDefRelaxMaxFlowTravel))
@@ -190,13 +230,20 @@ public Action CheckDirectorOptions(Handle timer)
 	{
 		iShouldPrint = 1;
 	}
+
+	// PreferredSpecialDirection = 1
+	if ( VSCRIPT_RET_CHANGED == CheckSetMapScriptParamChange("PreferredSpecialDirection", g_iDefPreferredSpecialDirection, iDefPreferredSpecialDirection))
+	{
+		iShouldPrint = 1;
+	}
 	
 	if (iShouldPrint)
 	{
-		CPrintToChatAll("{yellow}SIControlScript{default}: {blue}当前地图默认推进距离设置为 {yellow}%d {blue}码, 阶段{yellow}%s{blue}, Build up至少 {yellow}%d {blue}秒", 
+		CPrintToChatAll("{olive}★{blue}当前地图默认推进距离设置为{yellow}%d{blue}码, 阶段{yellow}%s{blue}, Build up至少{yellow}%d{blue}秒, 刷新位置{yellow}%s", 
 			g_iCurDirectorFlowTravel,
 			g_iDefLockTempo ? "锁定" : "不锁定",
-			g_iDefBuildUpMinInterval
+			g_iDefBuildUpMinInterval,
+			g_sPreferredDirectionTypeArray[g_iDefPreferredSpecialDirection + 1]
 		);
 	}
 	return Plugin_Continue;
