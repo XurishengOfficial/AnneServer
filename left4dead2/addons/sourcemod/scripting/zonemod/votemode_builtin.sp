@@ -3,6 +3,7 @@
 
 #include <sourcemod>
 #include <builtinvotes>
+#include <multicolors>
 #undef REQUIRE_PLUGIN
 #include <confogl>
 #include <colors>
@@ -342,6 +343,15 @@ public int ConfigsMenuHandler(Menu menu, MenuAction action, int param1, int para
 		// g_aMenuItemPick[g_i1stMenuItemPick + 1] = g_i2ndMenuItemPick + 1;
 		// PrintToChatAll("Pick 1st = %d, 2nd = %d, %s, cmd = %s", g_i1stMenuItemPick, g_i2ndMenuItemPick, g_s1stMenuItemPick, g_sExecCmd);
 
+		if (GetUserFlagBits(param1) & ADMFLAG_ROOT)
+		{
+			ServerCommand("%s", g_sExecCmd); 
+			g_aMenuItemPick[g_i1stMenuItemPick + 1] = g_i2ndMenuItemPick + 1;
+			char adminName[64];
+			GetClientName(param1, adminName, sizeof(adminName));
+			CPrintToChatAll("{yellow}VoteMode{default}: {blue}管理员 {olive}%s {blue}已直接执行配置{default}: {olive}%s.", adminName, g_s1stMenuItemPick);
+			return 0;
+		}
 
 		if (StartMatchVote(param1, g_s1stMenuItemPick)) {
 			FakeClientCommand(param1, "Vote Yes");
