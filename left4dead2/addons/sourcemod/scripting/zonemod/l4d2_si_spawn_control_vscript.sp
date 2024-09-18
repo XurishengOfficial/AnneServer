@@ -114,6 +114,15 @@ public void CPrintDirectorInfo2()
 	);
 }
 
+public void CPrintDirectorInfo3()
+{
+	CPrintToChatAll("{olive}★{blue}当前章节阶段{yellow}%s{blue}, Build up至少{yellow}%d{blue}秒, 刷新位置{yellow}%s", 
+		g_iDefLockTempo ? "锁定" : "不锁定",
+		g_iDefBuildUpMinInterval,
+		g_sPreferredDirectionTypeArray[g_iDefPreferredSpecialDirection + 1]
+	);
+}
+
 /* or L4D2_GetScriptValueInt("RelaxMaxFlowTravel", 114514) */
 /* 114514 is default value when search fail... */
 public int GetIntMapScriptParam(const char [] sParamName, int &iOutput)
@@ -194,6 +203,7 @@ public void Event_PlayerLeftSafeArea(Event hEvent, const char[] sEventName, bool
 	if (!g_bDirectorInfoPrinted)
 	{
 		CPrintDirectorInfo();
+		CPrintDirectorInfo3();
 		g_bDirectorInfoPrinted = true;
 	}
 }
