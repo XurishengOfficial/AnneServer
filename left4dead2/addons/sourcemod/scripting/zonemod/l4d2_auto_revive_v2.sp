@@ -35,7 +35,7 @@
 ConVar g_hCvarAutoReViveEnable = null;
 ConVar g_hCvarAutoReViveType = null;
 bool g_bCvarAutoReViveEnable = false;
-bool g_bCvarAutoReViveType = false;
+int g_iCvarAutoReViveType = false;
 
 // static char g_OriginHostName[128];
 // static char g_HostNameBuffer[128];
@@ -53,7 +53,7 @@ public Plugin myinfo =
 void GetCvars()
 {
 	g_bCvarAutoReViveEnable = g_hCvarAutoReViveEnable.BoolValue;
-	g_bCvarAutoReViveType = g_hCvarAutoReViveType.BoolValue;
+	g_iCvarAutoReViveType = g_hCvarAutoReViveType.IntValue;
 }
 
 public void ConVarChanged_Enable(ConVar hConvar, const char[] sOldValue, const char[] sNewValue)
@@ -80,13 +80,17 @@ public void ConVarChanged_Type(ConVar hConvar, const char[] sOldValue, const cha
 {
 	GetCvars();
 
-	if (g_bCvarAutoReViveType)
+	if (g_iCvarAutoReViveType == 1)
 	{
 		CPrintToChatAll("{yellow}AutoRevive{default}: {blue}处死特感方式为{olive} 所有 {default}.");
 	}
-	else
+	else if (g_iCvarAutoReViveType == 0)
 	{
 		CPrintToChatAll("{yellow}AutoRevive{default}: {blue}处死特感方式为{olive} 单只 {default}.");
+	}
+	else if (g_iCvarAutoReViveType == 2)
+	{
+		CPrintToChatAll("{yellow}AutoRevive{default}: {blue}处死特感方式为{olive} 一半 {default}.");
 	}
 }
 
@@ -96,7 +100,7 @@ public void OnPluginStart()
 	g_hCvarAutoReViveEnable = CreateConVar("auto_revive_enable", "0", "是否开启自动解控", FCVAR_NONE, true, 0.0, true, 1.0);
 
 	// 0: 处死单只特感; 1: 处死所有特感
-	g_hCvarAutoReViveType = CreateConVar("auto_revive_type", "0", "解控时仅处死控制玩家的特感", FCVAR_NONE, true, 0.0, true, 1.0);
+	g_hCvarAutoReViveType = CreateConVar("auto_revive_type", "0", "解控时仅处死控制玩家的特感", FCVAR_NONE, true, 0.0, true, 2.0);
 
 	GetCvars();
 
@@ -120,7 +124,7 @@ public void OnPluginStart()
 public Action KillInfected(Handle timer, int index)
 {
 	// 1: 处死所有 0: 处死单个
-	if (g_bCvarAutoReViveType)
+	if (g_iCvarAutoReViveType == 1)
 	{
 		for (int i = 1; i < MaxClients + 1; i ++)
 		{
@@ -130,7 +134,28 @@ public Action KillInfected(Handle timer, int index)
 			}
 		}
 	}
-	else
+	else if (g_iCvarAutoReViveType == 2)
+	{
+		ForcePlayerSuicide(index);
+		int curSInum = 0;
+		for (int i = 1; i < MaxClients + 1; i ++)
+		{
+			if(IsClientInGame(i) && GetClientTeam(i) == TEAM_INFECTED)
+			{
+				curSInum++;
+			}
+		}
+		for (int i = 1; i < MaxClients + 1; i ++)
+		{
+			if(IsClientInGame(i) && GetClientTeam(i) == TEAM_INFECTED)
+			{
+				ForcePlayerSuicide(i);
+				curSInum -= 2;
+			}
+			if (curSInum <= 0) break;
+		}
+	}
+	else if (g_iCvarAutoReViveType == 0)
 	{
 		if(IsClientInGame(index) && GetClientTeam(index) == TEAM_INFECTED)
 		{
