@@ -9,7 +9,9 @@
 #define VSCRIPT_RET_CHANGED 		2
 #define VSCRIPT_RET_INIT 			3
 
-#define DIRECTORSCRIPT_TYPE			"DirectorScript.MapScript.LocalScript.DirectorOptions"
+#define DIRECTORSCRIPT_TYPE		"g_MapScript.LocalScript.DirectorOptions"
+// #define DIRECTORSCRIPT_TYPE			"DirectorScript.MapScript.LocalScript.DirectorOptions"
+//#define DIRECTORSCRIPT_TYPE		"DirectorScript.DirectorOptions"
 
 #define DEF_LOCK_TEMP				0
 #define DEF_LOCK_TEMP_FINAL			1
@@ -20,11 +22,13 @@ ConVar g_hDirectorSIFastRespawn;
 ConVar g_hDirectorFlowTravel;
 
 int g_iCurDirectorFlowTravel;
-int g_iDefLockTempo;
-int g_iDefBuildUpMinInterval;
-int g_iDefPreferredSpecialDirection;
+int g_iCurLockTempo;
+int g_iCurShouldAllowSpecialsWithTank;
+int g_iCurBuildUpMinInterval;
+int g_iCurPreferredSpecialDirection;
 
 bool g_bDirectorInfoPrinted;
+bool g_bFinaleStarted;
 
 enum PreferredDirectionType
 {
@@ -73,25 +77,33 @@ public void OnPluginStart()
 	g_hDirectorSINum = CreateConVar("l4d_infectedbots_max_specials", "28", "特感数量", FCVAR_NONE, true, 0.0, true, 31.0);
 	g_hDirectorSIRespawnInterval = CreateConVar("l4d_infectedbots_spawn_time_max", "15", "刷新间隔", FCVAR_NONE, true, 0.0);
 	g_hDirectorSIFastRespawn = CreateConVar("l4d_infectedbots_fast_spawn", "0", "快速补位", FCVAR_NONE, true, 0.0, true, 1.0);
-	g_hDirectorFlowTravel = FindConVar("director_relax_max_flow_travel");
+	g_hDirectorFlowTravel = CreateConVar("l4d_infectedbots_relax_max_flow_travel", "0", "默认推进距离", FCVAR_NONE);
+	// g_hDirectorFlowTravel = FindConVar("director_relax_max_flow_travel");
 
 	RegAdminCmd("sm_si_num", Cmd_ChangeSINum, ADMFLAG_GENERIC, "Admin change the director option cm_MaxSpecials");
 	RegAdminCmd("sm_si_time", Cmd_ChangeSITime, ADMFLAG_GENERIC, "Admin change the director option cm_SpecialRespawnInterval");
 	RegAdminCmd("sm_si_fastrespawn", Cmd_ChangeSIFastSpawn, ADMFLAG_GENERIC, "Admin enable/disable script SI fast spawn");
 	RegAdminCmd("sm_si_flowtravel", Cmd_ChangeFlowTravel, ADMFLAG_GENERIC, "Admin change the director option RelaxMaxFlowTravel. The upper bound of map script");
+	// RegAdminCmd("sm_si_allowwithtank", Cmd_ChangeShouldAllowSpecialsWithTank, ADMFLAG_GENERIC, "Admin change the director option ShouldAllowSpecialsWithTank. ");
 
-	g_iCurDirectorFlowTravel = g_hDirectorFlowTravel.IntValue;
+	// g_iCurDirectorFlowTravel = g_hDirectorFlowTravel.IntValue;
 
 	HookConVarChange(g_hDirectorSINum, reload_script);
 	HookConVarChange(g_hDirectorSIRespawnInterval, reload_script);
 	HookConVarChange(g_hDirectorSIFastRespawn, reload_script);
-	HookConVarChange(g_hDirectorFlowTravel, OnConvarRelaxMaxFlowTravelChanged);
+	// HookConVarChange(g_hDirectorFlowTravel, OnConvarRelaxMaxFlowTravelChanged);
 
 	HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
 	HookEvent("player_left_safe_area", Event_PlayerLeftSafeArea, EventHookMode_PostNoCopy);
 
+	HookEntityOutput("trigger_finale", "FinaleStart", OnFinaleStart);
 
 	CreateTimer(1.0, CheckDirectorOptions, _, TIMER_REPEAT);
+}
+
+void OnFinaleStart(const char[] output, int caller, int activator, float delay)
+{
+	g_bFinaleStarted = true;
 }
 
 public void CPrintDirectorInfo()
@@ -106,20 +118,11 @@ public void CPrintDirectorInfo()
 
 public void CPrintDirectorInfo2()
 {
-	CPrintToChatAll("{yellow}SIControlScript{default}: {blue}当前特感最高同屏{yellow} %d {blue}特，复活时间{yellow} %d {blue}秒，地图推进距离{yellow} %d {blue}码, 特感快速补位{yellow}%s", 
-		g_hDirectorSINum.IntValue, 
-		g_hDirectorSIRespawnInterval.IntValue,
-		g_hDirectorFlowTravel.IntValue,
-		g_hDirectorSIFastRespawn.IntValue ? "开启" : "关闭"
-	);
-}
-
-public void CPrintDirectorInfo3()
-{
-	CPrintToChatAll("{olive}★{blue}当前章节阶段{yellow}%s{blue}, Build up至少{yellow}%d{blue}秒, 刷新位置{yellow}%s", 
-		g_iDefLockTempo ? "锁定" : "不锁定",
-		g_iDefBuildUpMinInterval,
-		g_sPreferredDirectionTypeArray[g_iDefPreferredSpecialDirection + 1]
+	CPrintToChatAll("{olive}★{blue}当前阶段 {yellow}%s{blue}, Build up {yellow}%d{blue}秒, 刷新位置 {yellow}%s{blue}, 特感坦克同时存在 {yellow}%s", 
+		g_iCurLockTempo ? "锁定" : "不锁定",
+		g_iCurBuildUpMinInterval,
+		g_sPreferredDirectionTypeArray[g_iCurPreferredSpecialDirection + 1],
+		g_iCurShouldAllowSpecialsWithTank ? "True" : "False"
 	);
 }
 
@@ -193,9 +196,8 @@ public int DelMapScriptParam(const char [] sParamName)
 public void Event_RoundStart(Event hEvent, const char[] sEventName, bool bDontBroadcast)
 {
 	g_bDirectorInfoPrinted = false;
-
-	/* set params to default value or customized value */
-	g_iCurDirectorFlowTravel = g_hDirectorFlowTravel.IntValue;
+	g_bFinaleStarted = false;
+	g_iCurLockTempo = 0;
 }
 
 public void Event_PlayerLeftSafeArea(Event hEvent, const char[] sEventName, bool bDontBroadcast)
@@ -203,7 +205,7 @@ public void Event_PlayerLeftSafeArea(Event hEvent, const char[] sEventName, bool
 	if (!g_bDirectorInfoPrinted)
 	{
 		CPrintDirectorInfo();
-		CPrintDirectorInfo3();
+		CPrintDirectorInfo2();
 		g_bDirectorInfoPrinted = true;
 	}
 }
@@ -212,59 +214,89 @@ public void Event_PlayerLeftSafeArea(Event hEvent, const char[] sEventName, bool
 public Action CheckDirectorOptions(Handle timer)
 {
 	int iShouldPrint = 0;
-	int iDefRelaxMaxFlowTravel = g_hDirectorFlowTravel.IntValue;
-
-	/* params below will not change from Convar, so don't use Convar but local var instead */
-	int iDefLockTempo = L4D_IsMissionFinalMap();
+	
+	int iDefRelaxMaxFlowTravel = 3000;
+	// int iDefLockTempo = L4D_IsMissionFinalMap();
+	// int iDefLockTempo = false;
 	int iDefBuildUpMinInterval = 15;
 	int iDefPreferredSpecialDirection = -1;
+	int iDefShouldAllowSpecialsWithTank = 0;
+
+	int bRelaxMaxFlowTravelChanged = 0;
+	int bLockTempoChanged = 0;
+	int bBuildUpMinIntervalChanged = 0;
+	int bPreferredSpecialDirectionChanged = 0;
+	int bShouldAllowSpecialsWithTankChanged = 0;
 
 	/* Will return INIT every round start! */
-	if ( VSCRIPT_RET_CHANGED == CheckSetMapScriptParamChange("RelaxMaxFlowTravel", g_iCurDirectorFlowTravel, iDefRelaxMaxFlowTravel))
+	if ( VSCRIPT_RET_CHANGED <= CheckSetMapScriptParamChange("RelaxMaxFlowTravel", g_iCurDirectorFlowTravel, iDefRelaxMaxFlowTravel)) 
+	{		
+		bRelaxMaxFlowTravelChanged = 1;
+	}
+
+	/* 自己设置的优先级更高 */
+	if (g_hDirectorFlowTravel.IntValue > 0 && g_iCurDirectorFlowTravel != g_hDirectorFlowTravel.IntValue)
 	{
-		/* 地图设置的flow不能超过我们设置的 */
-		if (g_iCurDirectorFlowTravel > g_hDirectorFlowTravel.IntValue)
+		SetMapScriptParam("RelaxMaxFlowTravel", g_hDirectorFlowTravel.IntValue);
+		g_iCurDirectorFlowTravel = g_hDirectorFlowTravel.IntValue;
+		bRelaxMaxFlowTravelChanged = 1;
+	}
+
+	if (!L4D_IsMissionFinalMap())
+	{
+		if ( VSCRIPT_RET_CHANGED <= CheckSetMapScriptParamChange("LockTempo", g_iCurLockTempo, 0))
 		{
-			g_iCurDirectorFlowTravel = g_hDirectorFlowTravel.IntValue;
-			SetMapScriptParam("RelaxMaxFlowTravel", g_iCurDirectorFlowTravel);
+			bLockTempoChanged = 1;
 		}
-		iShouldPrint = 1;
+	}
+	else if (g_bFinaleStarted)
+	{
+		if ( VSCRIPT_RET_CHANGED <= CheckSetMapScriptParamChange("LockTempo", g_iCurLockTempo, 1))
+		{
+			bLockTempoChanged = 1;
+		}
 	}
 
-	if ( VSCRIPT_RET_CHANGED == CheckSetMapScriptParamChange("LockTempo", g_iDefLockTempo, iDefLockTempo))
+	if ( VSCRIPT_RET_CHANGED <= CheckSetMapScriptParamChange("BuildUpMinInterval", g_iCurBuildUpMinInterval, iDefBuildUpMinInterval))
 	{
-		iShouldPrint = 1;
-	}
-
-	if ( VSCRIPT_RET_CHANGED == CheckSetMapScriptParamChange("BuildUpMinInterval", g_iDefBuildUpMinInterval, iDefBuildUpMinInterval))
-	{
-		iShouldPrint = 1;
+		bBuildUpMinIntervalChanged = 1;
 	}
 
 	// PreferredSpecialDirection = 1
-	if ( VSCRIPT_RET_CHANGED == CheckSetMapScriptParamChange("PreferredSpecialDirection", g_iDefPreferredSpecialDirection, iDefPreferredSpecialDirection))
+	if ( VSCRIPT_RET_CHANGED <= CheckSetMapScriptParamChange("PreferredSpecialDirection", g_iCurPreferredSpecialDirection, iDefPreferredSpecialDirection))
 	{
-		iShouldPrint = 1;
+		bPreferredSpecialDirectionChanged = 1;
+	}
+
+	if ( VSCRIPT_RET_CHANGED <= CheckSetMapScriptParamChange("ShouldAllowSpecialsWithTank", g_iCurShouldAllowSpecialsWithTank, iDefShouldAllowSpecialsWithTank))
+	{
+		bShouldAllowSpecialsWithTankChanged = 1;
 	}
 	
+	iShouldPrint = bRelaxMaxFlowTravelChanged | bLockTempoChanged | bBuildUpMinIntervalChanged | bPreferredSpecialDirectionChanged | bShouldAllowSpecialsWithTankChanged;
 	if (iShouldPrint)
 	{
-		CPrintToChatAll("{olive}★{blue}当前地图默认推进距离设置为{yellow}%d{blue}码, 阶段{yellow}%s{blue}, Build up至少{yellow}%d{blue}秒, 刷新位置{yellow}%s", 
+		CPrintToChatAll("{olive}★{blue}推进距离设置为%s%d{blue}码, 阶段%s%s{blue}, Build up%s%d{blue}秒, 刷新位置%s%s{blue}, 特感坦克同时存在%s%s", 
+			bRelaxMaxFlowTravelChanged ? "{yellow}" : "",
 			g_iCurDirectorFlowTravel,
-			g_iDefLockTempo ? "锁定" : "不锁定",
-			g_iDefBuildUpMinInterval,
-			g_sPreferredDirectionTypeArray[g_iDefPreferredSpecialDirection + 1]
+			
+			bLockTempoChanged ? "{yellow}" : "",
+			g_iCurLockTempo ? "锁定" : "不锁定",
+			
+			bBuildUpMinIntervalChanged ? "{yellow}" : "",
+			g_iCurBuildUpMinInterval,
+				
+			bPreferredSpecialDirectionChanged ? "{yellow}" : "",
+			g_sPreferredDirectionTypeArray[g_iCurPreferredSpecialDirection + 1],
+			
+			bShouldAllowSpecialsWithTankChanged ? "{yellow}" : "",
+			g_iCurShouldAllowSpecialsWithTank ? "True" : "False"
 		);
+		PrintHintTextToAll("★ 推进距离%d码, 阶段%s ★", g_iCurDirectorFlowTravel, (g_iCurLockTempo ? "锁定" : "不锁定"));
 	}
 	return Plugin_Continue;
 }
 
-public OnConvarRelaxMaxFlowTravelChanged(Handle convar, char[] oldValue, char[] newValue)
-{
-	/* 在下次timer周期内重新创建 同步convar的值到g_iCurDirectorFlowTravel */
-	DelMapScriptParam("RelaxMaxFlowTravel");
-	CPrintDirectorInfo2();
-}
 
 public reload_script(Handle convar, char[] oldValue, char[] newValue)
 {
@@ -394,9 +426,14 @@ public Action Cmd_ChangeFlowTravel(int client, int args)
 	}
 
 	iSIFlowTravel = StringToInt(sSIFlowTravel);
-	ServerCommand("sm_cvar director_relax_max_flow_travel %d", iSIFlowTravel);
+	ServerCommand("l4d_infectedbots_relax_max_flow_travel %d", iSIFlowTravel);
 	return Plugin_Handled;
 }
+
+// public Action Cmd_ChangeShouldAllowSpecialsWithTank(int client, int args)
+// {
+
+// }
 
 bool IsUnsignedInteger(const char[] buffer)
 {	
