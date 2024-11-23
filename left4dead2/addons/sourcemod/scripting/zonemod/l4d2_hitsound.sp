@@ -220,6 +220,8 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 	new bool:heatshout = false;
 	heatshout = GetEventBool(event, "headshot");
 	new damagetype = GetClientOfUserId(GetEventInt(event, "type"));
+	decl String:weaponName[32];
+	GetEventString(event, "weapon", weaponName, sizeof(weaponName));
 
 	if (GetConVarInt(g_hSoundEnable) != 1)
 		return Plugin_Continue;
@@ -235,6 +237,10 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 	if(!IsValidClient(victim) || GetClientTeam(victim) != 3 || !IsValidClient(attacker) || GetClientTeam(attacker) != 2 || IsFakeClient(attacker))  
 		return Plugin_Continue;
 	
+	if (StrEqual(weaponName, "melee"))
+		return Plugin_Continue;
+	// PrintToChatAll("weaponName = %s", weaponName);
+
 	if(SoundSelect[attacker] == 2)
 	{
 		new String:tmp[64];
@@ -270,9 +276,10 @@ public Action:Event_InfectedDeath(Handle:event, const String:name[], bool:dontBr
 		return Plugin_Continue;
 
 	/* 后续排除近战 */
-	if(WeaponID == 0)
+	if(WeaponID == 0 || WeaponID == 19)
     	return Plugin_Continue;
 
+	// PrintToChatAll("WeaponID = %d", WeaponID);
 	if(GetConVarInt(g_hBlast) == 0 && damagetype)
     	return Plugin_Continue;
 
