@@ -261,12 +261,12 @@ void SetSurvivoHealth(int client)
 	{
 		L4D_ReviveSurvivor(client);
 		SetEntityHealth(client, g_iHealthValue);
-		L4D_SetPlayerTempHealth(client, 0);
-		SetEntProp(client, Prop_Send, "m_isGoingToDie", 0);//不知道干嘛的.
-		SetEntProp(client, Prop_Send, "m_bIsOnThirdStrike", 0);//取消黑白状态.
-		SetEntProp(client, Prop_Send, "m_currentReviveCount", 0);//重置倒地次数.
-		StopSound(client, SNDCHAN_STATIC, "player/heartbeatloop.wav");//去除黑白心跳声.
+		L4D_SetPlayerTempHealth(client, 0); 
 	}
+	SetEntProp(client, Prop_Send, "m_isGoingToDie", 0);//不知道干嘛的.
+	SetEntProp(client, Prop_Send, "m_bIsOnThirdStrike", 0);//取消黑白状态.
+	SetEntProp(client, Prop_Send, "m_currentReviveCount", 0);//重置倒地次数.
+	StopSound(client, SNDCHAN_STATIC, "player/heartbeatloop.wav");//去除黑白心跳声.
 }
 
 void vRoundRespawn(int client)
