@@ -46,6 +46,7 @@ public OnPluginStart() {
 	HookEvent("player_hurt", HeadShotHook, EventHookMode_Pre);
 	HookEvent("infected_hurt", HeadShotHook, EventHookMode_Pre);
 	HookEvent("infected_death", HeadShotHook, EventHookMode_Pre);
+	HookEvent("player_death", HeadShotHook, EventHookMode_Pre);
 
 	g_cvHeadShot = CreateConVar("ds_headshot", "ui/littlereward.wav", "Sound bite for head shot");
 	HookConVarChange(g_cvHeadShot, UpdateConVarsHook);
@@ -85,7 +86,7 @@ public UpdateConVarsHook(Handle convar, const char[] oldCv, const char[] newCv) 
 public HeadShotHook(Handle event, const char[] name, bool dontBroadcast) {
 	int hitgroup;
 
-	if (strcmp(name, "infected_death") == 0) {
+	if (strcmp(name, "infected_death") == 0 || strcmp(name, "player_death") == 0) {
 		hitgroup = GetEventInt(event, "headshot");
 		g_sB = g_KillShot;
 	}
