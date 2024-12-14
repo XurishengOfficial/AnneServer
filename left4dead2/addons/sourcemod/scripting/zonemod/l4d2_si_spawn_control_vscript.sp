@@ -2,6 +2,7 @@
 #include <sdktools>
 #include <multicolors>
 #include <left4dhooks>
+#include <float>
 
 #define VSCRIPT_RET_ERROR 			-1
 #define VSCRIPT_RET_SUCCESS 		0
@@ -228,18 +229,26 @@ public Action CheckDirectorOptions(Handle timer)
 	int bPreferredSpecialDirectionChanged = 0;
 	int bShouldAllowSpecialsWithTankChanged = 0;
 
+	// PrintToChatAll("g_iCurDirectorFlowTravel = %d, g_hDirectorFlowTravel = %d %d", g_iCurDirectorFlowTravel, g_hDirectorFlowTravel.IntValue, IntAbs(g_hDirectorFlowTravel.IntValue));
+
 	/* Will return INIT every round start! */
 	if ( VSCRIPT_RET_CHANGED <= CheckSetMapScriptParamChange("RelaxMaxFlowTravel", g_iCurDirectorFlowTravel, iDefRelaxMaxFlowTravel)) 
 	{		
 		bRelaxMaxFlowTravelChanged = 1;
 	}
 
-	/* 自己设置的优先级更高 */
-	if (g_hDirectorFlowTravel.IntValue > 0 && g_iCurDirectorFlowTravel != g_hDirectorFlowTravel.IntValue)
+	if (g_hDirectorFlowTravel.IntValue != 0 && g_iCurDirectorFlowTravel != IntAbs(g_hDirectorFlowTravel.IntValue))
 	{
-		SetMapScriptParam("RelaxMaxFlowTravel", g_hDirectorFlowTravel.IntValue);
-		g_iCurDirectorFlowTravel = g_hDirectorFlowTravel.IntValue;
-		bRelaxMaxFlowTravelChanged = 1;
+		/**
+		 * g_hDirectorFlowTravel > 0 自己设置的码数覆盖地图设置的
+		 * g_hDirectorFlowTravel < 0 最终码数取自己设置的和地图设置的更小值
+		 */
+		if (g_hDirectorFlowTravel.IntValue > 0 || g_iCurDirectorFlowTravel > IntAbs(g_hDirectorFlowTravel.IntValue))
+		{
+			SetMapScriptParam("RelaxMaxFlowTravel", IntAbs(g_hDirectorFlowTravel.IntValue));
+			g_iCurDirectorFlowTravel = IntAbs(g_hDirectorFlowTravel.IntValue);
+			bRelaxMaxFlowTravelChanged = 1;
+		}
 	}
 
 	if (!L4D_IsMissionFinalMap())
@@ -409,17 +418,20 @@ public Action Cmd_ChangeFlowTravel(int client, int args)
 	if (args < 1)
 	{
 		CPrintToChatAll("{yellow}SIControlScript{default}: {blue}sm_si_flowtravel <推进码数>");
+		CPrintToChatAll("{yellow}SIControlScript{default}: {blue}> 0: 自己设置的码数覆盖地图码数");
+		CPrintToChatAll("{yellow}SIControlScript{default}: {blue}= 0: 使用地图默认码数");
+		CPrintToChatAll("{yellow}SIControlScript{default}: {blue}< 0: 使用自设码数和地图码数最小值");
 		CPrintDirectorInfo();
 		return Plugin_Handled;	
 	}
 	
 	char sSIFlowTravel[8];
-	int iSIFlowTravel = 3000;
+	int iSIFlowTravel = 0;
 	
 	GetCmdArg(1, sSIFlowTravel, sizeof(sSIFlowTravel));
 	
-	// Make sure the arg is unsigned int
-	if (!IsUnsignedInteger(sSIFlowTravel))
+	// Make sure the arg is signed int
+	if (!IsSignedInteger(sSIFlowTravel))
 	{
 		CReplyToCommand(client, "{yellow}SIControlScript{default}: {blue}<推进距离> {olive}invalid{default}.");
 		return Plugin_Handled;
@@ -444,4 +456,22 @@ bool IsUnsignedInteger(const char[] buffer)
 			return false;
 	}
 	return true;
+}
+
+bool IsSignedInteger(const char[] buffer)
+{	
+	int len = strlen(buffer);
+	for (int i = 0; i < len; i++)
+	{
+		if (i == 0 && (buffer[i] == '-'))
+			continue;
+		if (!IsCharNumeric(buffer[i]))
+			return false;
+	}
+	return true;
+}
+
+int IntAbs(int a)
+{
+	return a > 0 ? a : -1 * a;
 }
