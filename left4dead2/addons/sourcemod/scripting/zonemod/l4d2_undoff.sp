@@ -905,23 +905,23 @@ public Float:GetWeaponFFDist(String:weaponName[])
 	// vary FF distance by weapon
 	if (StrEqual(weaponName, "weapon_melee") || StrEqual(weaponName, "weapon_pistol") || StrEqual(weaponName, "weapon_chainsaw"))
 	{
-		return 70.0;
+		return 75.0;
 	}
 	else if (StrEqual(weaponName, "weapon_smg") || StrEqual(weaponName, "weapon_smg_silenced") || StrEqual(weaponName, "weapon_smg_mp5") || StrEqual(weaponName, "weapon_pistol_magnum") || StrEqual(weaponName, "weapon_grenade_launcher"))
 	{
-		return 70.0;
+		return 75.0;
 	}
 	else if	(StrEqual(weaponName, "weapon_pumpshotgun") || StrEqual(weaponName, "weapon_autoshotgun") || StrEqual(weaponName, "weapon_rifle") || StrEqual(weaponName, "weapon_hunting_rifle") || StrEqual(weaponName, "weapon_sniper_scout") || StrEqual(weaponName, "weapon_sniper_awp") || StrEqual(weaponName, "weapon_shotgun_spas") || StrEqual(weaponName, "weapon_shotgun_chrome") || StrEqual(weaponName, "weapon_rifle_sg552") || StrEqual(weaponName, "weapon_rifle_desert") || StrEqual(weaponName, "weapon_rifle_ak47"))
 	{
-		return 70.0;
+		return 75.0;
 	}
 	else if (StrEqual(weaponName, "weapon_sniper_military"))
 	{
-		return 70.0;
+		return 75.0;
 	}
 	else if (StrEqual(weaponName, "weapon_rifle_m60"))
 	{
-		return 70.0;
+		return 75.0;
 	}
 
 	return 0.0;
