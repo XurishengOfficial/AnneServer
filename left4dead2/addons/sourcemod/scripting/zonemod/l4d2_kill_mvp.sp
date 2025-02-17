@@ -335,6 +335,11 @@ Action OnTakeDamageAlive(int victim, int &attacker, int &inflictor, float &damag
 			{
 				int actualDmg = RoundToFloor(damage) > g_iHp[victim] + g_iTempHp[victim] ? g_iHp[victim] + g_iTempHp[victim] : RoundToFloor(damage);
 				g_iFriendlyFire[attacker] += actualDmg;
+				
+				// char attackerName[64], victimName[64];
+				// GetClientName(attacker, attackerName, sizeof(attackerName) - 1);
+				// GetClientName(victim, victimName, sizeof(victimName) - 1);
+				// CPrintToChatAll("{blue}?{olive} %s {blue}对{olive} %s {blue}造成了{yellow} %i {blue}点伤害", attackerName, victimName, actualDmg);
 			}
 		}
 	}
@@ -421,7 +426,7 @@ void Event_PlayerIncapStart(Handle event, const char [] name, bool dontBroadcast
 
 	g_iFriendlyFire[attacker] += (g_iHp[victim] + g_iTempHp[victim]);
 	
-	// CPrintToChatAll("{blue}?{olive} %s {blue}对{olive} %s {blue}造成了{yellow} %i {blue}点伤害并击倒了对方", attackerName, victimName, g_iHp[victim] + g_iTempHp[victim]);
+	CPrintToChatAll("[{blue}?{default}]{olive} %s {blue}击倒了{olive} %s", attackerName, victimName);
 	return;
 }
 
@@ -460,7 +465,7 @@ void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 			// will fire hurt before?
 			// g_iFriendlyFire[attacker] += (g_iHp[victim] + g_iTempHp[victim]);
 			
-			// CPrintToChatAll("{blue}?{olive} %s {blue}对{olive} %s {blue}造成了{yellow} %i {blue}点伤害并击杀了对方", attackerName, victimName, g_iHp[victim] + g_iTempHp[victim]);
+			CPrintToChatAll("[{blue}?{default}]{olive} %s {blue}黑死了{olive} %s", attackerName, victimName);
 		}
 		return;
 	}
