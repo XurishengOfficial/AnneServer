@@ -76,12 +76,15 @@ public void OnPluginStart()
 
 	g_hGameMode = FindConVar("mp_gamemode");
 	g_hGameMode.AddChangeHook(OnGameModeChanged);
+	g_hHostName = FindConVar("hostname");
+
 	RegConsoleCmd("sm_votemode", VoteRequest);
-	// RegConsoleCmd("sm_mtest", ShowArray);
 
 	HookEvent("player_disconnect", Event_PlayerDisconnect, EventHookMode_Pre);
-	g_hHostName = FindConVar("hostname");
+	HookEvent("mission_lost", Event_MissionLost, EventHookMode_PostNoCopy);
+	
 	GetConVarString(g_hHostName, g_HostNameOrigin, sizeof(g_HostNameOrigin));
+	CreateTimer(1.0, Timer_SetHostName, _, TIMER_REPEAT);
 }
 
 void LoadGameModeConfig()
@@ -99,6 +102,10 @@ void OnGameModeChanged(ConVar convar, const char[] oldValue, const char[] newVal
 		g_aMenuItemPick[i] = 0;
 	}
 	ServerCommand("sm_restartmap");
+}
+
+void Event_MissionLost(Event event, const char[] name, bool dontBroadcast) {
+	CPrintToChatAll("{blue}[{olive}!{blue}] 可通过命令{yellow}!votemode{blue}自定义特感数量复活时间等参数.");
 }
 
 public void OnConfigsExecuted()
@@ -168,16 +175,10 @@ public void OnConfigsExecuted()
 		}
 		g_hModesKV.GotoNextKey(false);
 	}
-	CreateTimer(3.0, Timer_SetHostName, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public Action Timer_SetHostName(Handle timer)
 {
-	// l4d_infectedbots_max_specials
-	// l4d_infectedbots_spawn_time_max
-	// 	ConVar g_hSpecialsNum = null;
-	// ConVar g_hSpecialsSpawnTime = null;
-	// , GetConVarInt(h_MaxPlayerZombies), GetConVarInt(h_InfectedSpawnTimeMax)
 	char hostName[128];
 	char sGameMode[64];
 	g_hGameMode.GetString(sGameMode, sizeof(sGameMode));
@@ -227,20 +228,6 @@ public Action Timer_SetHostName(Handle timer)
 	g_hHostName.SetString(hostName);
 	return Plugin_Continue;
 }
-
-// public Action ShowArray(int iClient, int iArgs)
-// {
-// 	if (iClient == 0) {
-// 		return Plugin_Handled;
-// 	}
-
-// 	for (int i = 1; i < FIRSTMENUITEM_NUM_MAX; ++i)
-// 	{
-// 		if (g_aMenuItemPick[i] > 0)
-// 			PrintToChatAll("Last Picked: %d, %d\n", i, g_aMenuItemPick[i]);
-// 	}
-// 	return Plugin_Handled;
-// }
 
 public Action VoteRequest(int iClient, int iArgs)
 {
